@@ -1,0 +1,7 @@
+#commits-table .message .tag {
+	max-width: initial !important;
+}
+
+#commits-table .message .tag>a {
+	padding: 0 3px;
+}

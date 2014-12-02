@@ -1,6 +1,8 @@
 function main() {
 
-	var apibase = location.pathname.replace(/^\/projects\/(\w+)\/repos\/([\w\-]+)(\/.*)?$/, '/rest/api/1.0/projects/$1/repos/$2');
+	var project = location.pathname.replace(/^\/projects\/(\w+)\/repos\/([\w\-]+)(\/.*)?$/, '$1');
+	var repo = location.pathname.replace(/^\/projects\/(\w+)\/repos\/([\w\-]+)(\/.*)?$/, '$2');
+	var apibase = '/rest/api/1.0/projects/' + project + '/repos/' + repo;
 	var $ = jQuery;
 
 	/* Keep me logged in! */
@@ -29,15 +31,15 @@ function main() {
 				$('.ft-tag').remove();
 				tbl.find('.commit-row').each(function() {
 					var sha = $(this).find('.changesetid').attr('href').replace(/^.*\/(\w+)\/?$/, '$1');
+				console.log('Stashmods Chrome extension: sha: ' + sha);
 					if (lookup[sha]) {
-						var span = $(this).find('.message span');
-						if (lookup[sha].length === 1) {
-							span.prepend('<div style="float:right;" class="ft-tag aui-lozenge">'+lookup[sha][0]+'</div>');
-						} else {
-							lookup[sha].forEach(function _add(tag) {
-								span.after('<div style="float:right; margin: 2px;" class="ft-tag aui-lozenge">'+tag+'</div>');
-							});
-						}
+						var tagSpan = $(this).find('.message .tag');
+						if (tagSpan && tagSpan.length) tagSpan = tagSpan[0];
+				console.log('Stashmods Chrome extension: tagSpan: ' + tagSpan.outerHTML);
+						tagSpan.innerHTML = '<span class="aui-icon aui-icon-small aui-iconfont-devtools-tag-small"></span>';
+						lookup[sha].forEach(function _add(tag) {
+							tagSpan.innerHTML += '<a href="/projects/' + project + '/repos/' + repo + '/commits?until=' + tag + '" data-id="refs/tags/' + tag + '" data-csid="' + sha + '">' + tag + '</a>';
+						});
 					}
 				});
 				observer.observe(tbl.get(0), {subtree: true, childList: true});
