@@ -3,5 +3,5 @@
 }
 
 #commits-table .message .tag>a {
-	padding: 0 3px;
+	padding-right: 3px;
 }

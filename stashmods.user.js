@@ -12,39 +12,54 @@ function main() {
 		$.get('/account');
 	}, 120000);
 
+	function getTagData(start, callback) {
+		$.get(apibase+'/tags?start=' + start, function(tagdata) {
+			callback(tagdata);
+		});
+	}
+
+	function getTags(callback) {
+		var values = [],
+			tags = [];
+
+		getTagData(0, function _processTagData(callback, tagdata) {
+			values = values.concat(tagdata.values);
+			if (tagdata.isLastPage || !tagdata.nextPageStart) {
+				for (var i=0,s=values.length; i<s; i++) {
+					var sha = values[i].latestChangeset;
+					tags[sha] = tags[sha] || [];
+					tags[sha].push(values[i].displayId);
+				}
+				callback(tags);
+			} else {
+				getTagData(tagdata.nextPageStart, _processTagData.bind(this, callback));
+			}
+		}.bind(this, callback));
+	}
+
 	function addTags() {
 		var tbl = $('table.commits-table');
 		if (!tbl.length) return;
-		$.get(apibase+'/tags', function(tagdata) {
-			var lookup = {};
-			for (var i=0,s=tagdata.values.length; i<s; i++) {
-				var sha = tagdata.values[i].latestChangeset;
-				lookup[sha] = lookup[sha] || [];
-				lookup[sha].push(tagdata.values[i].displayId);
-			}
-			var observer = new MutationObserver(modTable);
-			modTable();
+		var observer = new MutationObserver(modTable);
+		getTags(modTable);
 
-			function modTable() {
-				console.log('Stashmods Chrome extension: Modifying commit table');
-				observer.disconnect();
-				$('.ft-tag').remove();
-				tbl.find('.commit-row').each(function() {
-					var sha = $(this).find('.changesetid').attr('href').replace(/^.*\/(\w+)\/?$/, '$1');
-				console.log('Stashmods Chrome extension: sha: ' + sha);
-					if (lookup[sha]) {
-						var tagSpan = $(this).find('.message .tag');
-						if (tagSpan && tagSpan.length) tagSpan = tagSpan[0];
-				console.log('Stashmods Chrome extension: tagSpan: ' + tagSpan.outerHTML);
-						tagSpan.innerHTML = '<span class="aui-icon aui-icon-small aui-iconfont-devtools-tag-small"></span>';
-						lookup[sha].forEach(function _add(tag) {
-							tagSpan.innerHTML += '<a href="/projects/' + project + '/repos/' + repo + '/commits?until=' + tag + '" data-id="refs/tags/' + tag + '" data-csid="' + sha + '">' + tag + '</a>';
-						});
-					}
-				});
-				observer.observe(tbl.get(0), {subtree: true, childList: true});
-			}
-		});
+		function modTable(tags) {
+			console.log('Stashmods Chrome extension: Modifying commit table with tags:', tags);
+			observer.disconnect();
+			$('.ft-tag').remove();
+			tbl.find('.commit-row').each(function() {
+				var sha = $(this).find('.changesetid').attr('href').replace(/^.*\/(\w+)\/?$/, '$1');
+				if (tags[sha]) {
+					var tagSpan = $(this).find('.message .tag');
+					if (tagSpan && tagSpan.length) tagSpan = tagSpan[0];
+					tagSpan.innerHTML = '';
+					tags[sha].forEach(function _add(tag) {
+						tagSpan.innerHTML += '<span class="aui-icon aui-icon-small aui-iconfont-devtools-tag-small"></span><a href="/projects/' + project + '/repos/' + repo + '/commits?until=' + tag + '" data-id="refs/tags/' + tag + '" data-csid="' + sha + '">' + tag + '</a>';
+					});
+				}
+			});
+			observer.observe(tbl.get(0), {subtree: true, childList: true});
+		}
 	}
 
 	function addRedmineLinks() {
@@ -52,7 +67,7 @@ function main() {
 
 		for (var i = 0, l = commitMsgs.length; i < l; i++) {
 			var msg = commitMsgs[i];
-			msg.innerHTML = msg.innerHTML.replace(/(redmine\s*#?(\d+))/ig, '<a href="https://redmine.labs.ft.com/issues/$2">$1</a>')
+			msg.innerHTML = msg.innerHTML.replace(/(redmine\s*#?(\d+))/ig, '<a href="https://redmine.labs.ft.com/issues/$2">$1</a>');
 		}
 	}
 
