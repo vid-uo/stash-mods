@@ -5,3 +5,7 @@
 #commits-table .message .tag>a {
 	padding-right: 3px;
 }
+
+.pull-request-metadata .pull-request-branches .ref-lozenge:hover {
+  max-width: none !important;
+}
