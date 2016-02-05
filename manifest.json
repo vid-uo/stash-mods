@@ -9,7 +9,9 @@
 				"stashmods.user.css"
 			],
 			"matches": [
-				"http://git.svc.ft.com/*"
+				"http://git.svc.ft.com/*",
+				"https://git.uoregon.edu/*"
+
 			],
 			"run_at": "document_idle"
 		}
